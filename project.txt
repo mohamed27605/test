@@ -1,0 +1,234 @@
+The code:
+#include <iostream>
+#include <fstream>
+#include <cctype>
+#include <cstring>
+
+using namespace std;
+
+/* Character classes */
+#define LETTER 0
+#define DIGIT 1
+#define UNKNOWN 99
+
+/* Token codes */
+#define INT_LIT 10
+#define IDENT 11
+#define ASSIGN_OP 20
+#define ADD_OP 21
+#define SUB_OP 22
+#define MULT_OP 23
+#define DIV_OP 24
+#define LEFT_PAREN 25
+#define RIGHT_PAREN 26
+
+/* Global declarations */
+int charClass;
+char lexeme[100];
+char nextChar;
+int lexLen;
+int nextToken;
+ifstream in_fp;
+
+/* Function declarations */
+void addChar();
+void getChar();
+void getNonBlank();
+int lex();
+int lookup(char ch);
+
+/*/
+/* addChar - a function to add nextChar to lexeme */
+void addChar() {
+    if (lexLen <= 98) {
+        lexeme[lexLen++] = nextChar;
+        lexeme[lexLen] = '\0';
+    } else {
+        cout << "Error - lexeme is too long\n";
+    }
+}
+
+/*/
+/* getChar - a function to get the next character of input and determine its character class */
+void getChar() {
+    if (in_fp.get(nextChar)) {
+        if (isalpha(nextChar))
+            charClass = LETTER;
+        else if (isdigit(nextChar))
+            charClass = DIGIT;
+        else
+            charClass = UNKNOWN;
+    } else {
+        charClass = EOF;
+    }
+}
+
+/*/
+/* getNonBlank - a function to call getChar until it returns a non-whitespace character */
+void getNonBlank() {
+    while (isspace(nextChar))
+        getChar();
+}
+
+/*/
+/* lookup - a function to lookup operators and parentheses and return the token */
+int lookup(char ch) {
+    switch (ch) {
+        case '(':
+            addChar();
+            nextToken = LEFT_PAREN;
+            break;
+        case ')':
+            addChar();
+            nextToken = RIGHT_PAREN;
+            break;
+        case '+':
+            addChar();
+            nextToken = ADD_OP;
+            break;
+        case '-':
+            addChar();
+            nextToken = SUB_OP;
+            break;
+        case '*':
+            addChar();
+            nextToken = MULT_OP;
+            break;
+        case '/':
+            addChar();
+            nextToken = DIV_OP;
+            break;
+        default:
+            addChar();
+            nextToken = EOF;
+            break;
+    }
+    return nextToken;
+}
+
+/*/
+/* lex - a simple lexical analyzer for arithmetic expressions */
+int lex() {
+    lexLen = 0;
+    getNonBlank();
+
+    switch (charClass) {
+        case LETTER:
+            addChar();
+            getChar();
+            while (charClass == LETTER || charClass == DIGIT) {
+                addChar();
+                getChar();
+            }
+            nextToken = IDENT;
+            break;
+
+        case DIGIT:
+            addChar();
+            getChar();
+            while (charClass == DIGIT) {
+                addChar();
+                getChar();
+            }
+            nextToken = INT_LIT;
+            break;
+
+        case UNKNOWN:
+            lookup(nextChar);
+            getChar();
+            break;
+
+        case EOF:
+            nextToken = EOF;
+            strcpy(lexeme, "EOF");
+            break;
+    }
+
+    cout << "Next token is: " << nextToken << ", Next lexeme is " << lexeme << endl;
+    return nextToken;
+}
+
+/*/
+/* main driver */
+int main() {
+    in_fp.open("front.in");
+
+    if (!in_fp) {
+        cout << "ERROR - cannot open front.in\n";
+        return 1;
+    } else {
+        getChar();
+        do {
+            lex();
+        } while (nextToken != EOF);
+    }
+
+    in_fp.close();
+    return 0;
+}
+
+
+
+
+
+
+********************************************************************************************************
+
+********************************************************************************************************
+
+
+
+
+
+
+Explanation:
+
+What does this program do ?
+This program is a lexical analyzer. That means it reads a file containing code (in this case, arithmetic expressions like x = 5 + y;) and breaks it into tokens (like identifiers, numbers, operators, etc.).
+________________________________________What is a token?
+A token is a meaningful unit in a program. For example:
+•	x → identifier (variable)
+•	5 → integer literal
+•	+ → operator
+•	( or ) → parentheses
+Each token gets a special code like:
+•	IDENT (11) for identifiers
+•	INT_LIT (10) for numbers
+•	ADD_OP (21) for +
+•	And so on...
+________________________________________How does the program work?
+Here’s a breakdown of what each part does:
+________________________________________1. main()
+•	Opens a file called front.in
+•	Calls the lex() function repeatedly to analyze each token in the file until the end.
+________________________________________2. lex()
+This is the heart of the program:
+•	Skips spaces (using getNonBlank)
+•	Checks the type of character:
+o	If it's a letter, it reads a whole word (like a variable name)
+o	If it's a digit, it reads a number
+o	If it's a symbol (like +, *), it identifies the operator
+o	If it’s the end of the file, it returns EOF
+•	Prints the token type and the actual text (lexeme)
+________________________________________3. getChar()
+Reads the next character from the file and decides if it's a:
+•	Letter
+•	Digit
+•	Symbol
+•	Or end of file
+________________________________________4. addChar()
+Adds the current character to the word (lexeme) we’re building.
+________________________________________5. getNonBlank()
+Skips all the whitespace (spaces, tabs, new lines).
+________________________________________6. lookup(char ch)
+Checks if the character is one of the operators or parentheses, and gives it a token type.
+________________________________________Example input (front.in):
+ini
+Copy
+x = 45 + y
+Tokens it will find:
+1.	x → IDENT
+2.	= → not handled in your code but could be ASSIGN_OP
+3.	45 → INT_LIT
+4.	+ → ADD_OP
+5.	y → IDENT
